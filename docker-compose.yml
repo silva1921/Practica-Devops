@@ -1,0 +1,101 @@
+services:
+  # 1. Base de datos (PostgreSQL)
+  db:
+    image: postgres:16-alpine
+    container_name: devops_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devops_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devops_secure_password_99}
+      POSTGRES_DB: ${POSTGRES_DB:-devops_tasks_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-devops_user} -d $${POSTGRES_DB:-devops_tasks_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devops_network
+
+  # 2. Broker de mensajes (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: devops_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devops_network
+
+  # 3. Agente API (API Principal)
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: devops_api
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devops_user}:${POSTGRES_PASSWORD:-devops_secure_password_99}@db:5432/${POSTGRES_DB:-devops_tasks_db}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - devops_network
+
+  # 4. Agente Worker (Procesador secundario)
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: devops_worker
+    restart: always
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      HEALTHCHECK_PORT: 5001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devops_user}:${POSTGRES_PASSWORD:-devops_secure_password_99}@db:5432/${POSTGRES_DB:-devops_tasks_db}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - devops_network
+
+  # 5. Interfaz Gráfica (Frontend)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: devops_frontend
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    networks:
+      - devops_network
+
+networks:
+  devops_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

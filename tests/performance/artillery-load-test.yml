@@ -1,0 +1,93 @@
+config:
+  # Target the locally running ecosystem via the Nginx reverse proxy
+  target: "http://localhost:8080"
+  http:
+    timeout: 30
+  # Load phases: warm-up → ramp-up → sustained stress → cool-down
+  phases:
+    - name: "Warm-Up (5 VUs, 10s)"
+      duration: 10
+      arrivalRate: 5
+    - name: "Ramp-Up (5→30 VUs, 20s)"
+      duration: 20
+      arrivalRate: 5
+      rampTo: 30
+    - name: "Sustained Load (30 VUs, 30s)"
+      duration: 30
+      arrivalRate: 30
+    - name: "Stress Peak (30→60 VUs, 15s)"
+      duration: 15
+      arrivalRate: 30
+      rampTo: 60
+    - name: "Cool-Down (60→5 VUs, 10s)"
+      duration: 10
+      arrivalRate: 60
+      rampTo: 5
+
+  # Default headers for all requests
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+  # Performance thresholds (pipeline will fail if these are exceeded)
+  ensure:
+    p95: 2000    # 95th percentile response time ≤ 2s
+    p99: 5000    # 99th percentile response time ≤ 5s
+    maxErrorRate: 1  # Max 1% error rate
+
+scenarios:
+  - name: "Create and retrieve forms"
+    weight: 70   # 70% of virtual users run this flow
+    flow:
+      # Step 1: Create a new form
+      - post:
+          url: "/api/forms"
+          json:
+            title: "Test Form {{ $randomString() }}"
+            description: "Artillery load test form"
+            fields:
+              - name: "nombre"
+                label: "Nombre Completo"
+                type: "text"
+                required: true
+              - name: "puntuacion"
+                label: "Puntuación"
+                type: "number"
+                required: true
+              - name: "pais"
+                label: "País"
+                type: "select"
+                required: true
+                options: ["Colombia", "España", "México", "Chile"]
+          capture:
+            - json: "$.id"
+              as: "formId"
+          expect:
+            - statusCode: 201
+      # Step 2: List all forms
+      - get:
+          url: "/api/forms"
+          expect:
+            - statusCode: 200
+      # Step 3: Submit answers to the created form
+      - post:
+          url: "/api/forms/{{ formId }}/submissions"
+          json:
+            answers:
+              nombre: "Artillery Test User"
+              puntuacion: "{{ $randomInt(1, 10) }}"
+              pais: "Colombia"
+          expect:
+            - statusCode: 201
+
+  - name: "Health check probing"
+    weight: 30   # 30% of virtual users probe health endpoints
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/ready"
+          expect:
+            - statusCode: 200
