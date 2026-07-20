@@ -88,81 +88,317 @@ jobs:
       # Dashboard
       ####################
 
+      # - name: Crear Dashboard
+        # if: always()
+        # run: |
+
+        #   mkdir dashboard
+
+        #   cat > dashboard/index.html <<EOF
+        #   <!DOCTYPE html>
+        #   <html>
+        #   <head>
+        #   <meta charset="utf-8">
+        #   <title>Reporte CI</title>
+
+        #   <style>
+
+        #   body{
+        #       font-family:Arial;
+        #       background:#202124;
+        #       color:white;
+        #       padding:40px;
+        #   }
+
+        #   h1{
+        #       color:#42a5f5;
+        #   }
+
+        #   pre{
+        #       background:#111;
+        #       padding:15px;
+        #       overflow:auto;
+        #   }
+
+        #   </style>
+
+        #   </head>
+
+        #   <body>
+
+        #   <h1>Reporte CI/CD</h1>
+
+        #   <h2>API</h2>
+
+        #   <pre>
+        #   EOF
+
+        #   cat api-test.txt >> dashboard/index.html
+
+        #   cat >> dashboard/index.html <<EOF
+        #   </pre>
+
+        #   <h2>Worker</h2>
+
+        #   <pre>
+        #   EOF
+
+        #   cat worker-test.txt >> dashboard/index.html
+
+        #   cat >> dashboard/index.html <<EOF
+        #   </pre>
+
+        #   <h2>Trivy</h2>
+
+        #   <pre>
+        #   EOF
+
+        #   cat trivy.txt >> dashboard/index.html
+
+        #   cat >> dashboard/index.html <<EOF
+        #   </pre>
+
+        #   </body>
+        #   </html>
+        #   EOF
+
       - name: Crear Dashboard
         if: always()
         run: |
-
-          mkdir dashboard
-
-          cat > dashboard/index.html <<EOF
+      
+          mkdir -p dashboard
+      
+          cat > dashboard/index.html <<'EOF'
           <!DOCTYPE html>
-          <html>
+          <html lang="es">
           <head>
-          <meta charset="utf-8">
-          <title>Reporte CI</title>
-
+      
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+      
+          <title>CI/CD Dashboard</title>
+      
           <style>
-
+      
+          *{
+              margin:0;
+              padding:0;
+              box-sizing:border-box;
+          }
+      
           body{
-              font-family:Arial;
-              background:#202124;
-              color:white;
-              padding:40px;
+      
+              background:#0f172a;
+              color:#e2e8f0;
+              font-family:Arial, Helvetica, sans-serif;
+      
           }
-
-          h1{
-              color:#42a5f5;
+      
+          header{
+      
+              background:#1e293b;
+              padding:30px;
+              border-bottom:2px solid #334155;
+      
           }
-
-          pre{
-              background:#111;
+      
+          header h1{
+      
+              font-size:34px;
+      
+          }
+      
+          header p{
+      
+              color:#94a3b8;
+              margin-top:10px;
+      
+          }
+      
+          .container{
+      
+              width:95%;
+              margin:auto;
+              padding:30px;
+      
+          }
+      
+          .cards{
+      
+              display:grid;
+              grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+              gap:20px;
+              margin-bottom:30px;
+      
+          }
+      
+          .card{
+      
+              background:#1e293b;
+              padding:20px;
+              border-radius:12px;
+              box-shadow:0 5px 15px rgba(0,0,0,.4);
+      
+          }
+      
+          .card h3{
+      
+              color:#38bdf8;
+              margin-bottom:15px;
+      
+          }
+      
+          .status{
+      
+              font-size:28px;
+              font-weight:bold;
+              color:#22c55e;
+      
+          }
+      
+          section{
+      
+              background:#1e293b;
+              margin-top:25px;
+              border-radius:12px;
+              overflow:hidden;
+      
+          }
+      
+          section h2{
+      
+              background:#334155;
               padding:15px;
-              overflow:auto;
+      
           }
-
+      
+          pre{
+      
+              padding:20px;
+              overflow:auto;
+              white-space:pre-wrap;
+              font-size:14px;
+              line-height:1.5;
+              background:#0f172a;
+      
+          }
+      
+          footer{
+      
+              margin:30px;
+              text-align:center;
+              color:#64748b;
+      
+          }
+      
           </style>
-
+      
           </head>
-
+      
           <body>
-
-          <h1>Reporte CI/CD</h1>
-
-          <h2>API</h2>
-
+      
+          <header>
+      
+              <h1>🚀 DevOps Dashboard</h1>
+      
+              <p>Pipeline ejecutado correctamente</p>
+      
+              <p>Generado: DATE_PLACEHOLDER</p>
+      
+          </header>
+      
+          <div class="container">
+      
+          <div class="cards">
+      
+              <div class="card">
+      
+                  <h3>API</h3>
+      
+                  <div class="status">✅ Ejecutado</div>
+      
+              </div>
+      
+              <div class="card">
+      
+                  <h3>Worker</h3>
+      
+                  <div class="status">✅ Ejecutado</div>
+      
+              </div>
+      
+              <div class="card">
+      
+                  <h3>Trivy</h3>
+      
+                  <div class="status">🔍 Analizado</div>
+      
+              </div>
+      
+              <div class="card">
+      
+                  <h3>Runner</h3>
+      
+                  <div class="status">🟢 Online</div>
+      
+              </div>
+      
+          </div>
+      
+          <section>
+      
+          <h2>🧪 API Tests</h2>
+      
           <pre>
           EOF
-
+      
           cat api-test.txt >> dashboard/index.html
-
-          cat >> dashboard/index.html <<EOF
+      
+          cat >> dashboard/index.html <<'EOF'
           </pre>
-
-          <h2>Worker</h2>
-
+      
+          </section>
+      
+          <section>
+      
+          <h2>⚙️ Worker Tests</h2>
+      
           <pre>
           EOF
-
+      
           cat worker-test.txt >> dashboard/index.html
-
-          cat >> dashboard/index.html <<EOF
+      
+          cat >> dashboard/index.html <<'EOF'
           </pre>
-
-          <h2>Trivy</h2>
-
+      
+          </section>
+      
+          <section>
+      
+          <h2>🛡️ Trivy Report</h2>
+      
           <pre>
           EOF
-
+      
           cat trivy.txt >> dashboard/index.html
-
-          cat >> dashboard/index.html <<EOF
+      
+          cat >> dashboard/index.html <<'EOF'
           </pre>
-
+      
+          </section>
+      
+          <footer>
+      
+          Dashboard generado automáticamente por GitHub Actions
+      
+          </footer>
+      
           </body>
           </html>
           EOF
-
-      ####################
+      
+          sed -i "s/DATE_PLACEHOLDER/$(date)/" dashboard/index.html
+            ####################
       # Publicar Dashboard
       ####################
 
