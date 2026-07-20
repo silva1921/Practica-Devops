@@ -1,7 +1,7 @@
 # ==========================================
 # STAGE 1: Build & Install Dependencies
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -12,7 +12,7 @@ RUN npm ci
 # ==========================================
 # STAGE 2: Production Runtime
 # ==========================================
-FROM node:20-alpine AS runner
+FROM node:26-alpine AS runner
 
 RUN apk add --no-cache curl
 
