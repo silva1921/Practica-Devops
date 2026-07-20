@@ -1,4 +1,29 @@
-name: Deploy
+# name: Deploy
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   deploy:
+#     runs-on: self-hosted
+
+#     steps:
+#       - name: Clonar repositorio
+#         uses: actions/checkout@v4
+
+#       - name: Construir imagen
+#         run: docker compose build
+
+#       - name: Levantar contenedores
+#         run: docker compose up -d
+
+#       - name: Eliminar imágenes antiguas
+#         run: docker image prune -f
+
+
+name: Quality
 
 on:
   push:
@@ -6,18 +31,145 @@ on:
       - main
 
 jobs:
-  deploy:
+
+  quality:
+
     runs-on: self-hosted
 
     steps:
-      - name: Clonar repositorio
-        uses: actions/checkout@v4
 
-      - name: Construir imagen
-        run: docker compose build
+      - uses: actions/checkout@v4
 
-      - name: Levantar contenedores
-        run: docker compose up -d
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      - name: Eliminar imágenes antiguas
-        run: docker image prune -f
+      ####################
+      # API
+      ####################
+
+      - name: Instalar API
+        working-directory: api
+        run: npm ci
+
+      - name: Test API
+        working-directory: api
+        run: |
+          npm test > ../api-test.txt
+        continue-on-error: true
+
+      ####################
+      # Worker
+      ####################
+
+      - name: Instalar Worker
+        working-directory: worker
+        run: npm ci
+
+      - name: Test Worker
+        working-directory: worker
+        run: |
+          npm test > ../worker-test.txt
+        continue-on-error: true
+
+      ####################
+      # Trivy
+      ####################
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          format: table
+          output: trivy.txt
+        continue-on-error: true
+
+      ####################
+      # Dashboard
+      ####################
+
+      - name: Crear Dashboard
+        if: always()
+        run: |
+
+          mkdir dashboard
+
+          cat > dashboard/index.html <<EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+          <meta charset="utf-8">
+          <title>Reporte CI</title>
+
+          <style>
+
+          body{
+              font-family:Arial;
+              background:#202124;
+              color:white;
+              padding:40px;
+          }
+
+          h1{
+              color:#42a5f5;
+          }
+
+          pre{
+              background:#111;
+              padding:15px;
+              overflow:auto;
+          }
+
+          </style>
+
+          </head>
+
+          <body>
+
+          <h1>Reporte CI/CD</h1>
+
+          <h2>API</h2>
+
+          <pre>
+          EOF
+
+          cat api-test.txt >> dashboard/index.html
+
+          cat >> dashboard/index.html <<EOF
+          </pre>
+
+          <h2>Worker</h2>
+
+          <pre>
+          EOF
+
+          cat worker-test.txt >> dashboard/index.html
+
+          cat >> dashboard/index.html <<EOF
+          </pre>
+
+          <h2>Trivy</h2>
+
+          <pre>
+          EOF
+
+          cat trivy.txt >> dashboard/index.html
+
+          cat >> dashboard/index.html <<EOF
+          </pre>
+
+          </body>
+          </html>
+          EOF
+
+      ####################
+      # Publicar Dashboard
+      ####################
+
+      - name: Publicar
+        if: always()
+        run: |
+
+          mkdir -p /opt/reports/mi-proyecto
+
+          cp dashboard/index.html /opt/reports/mi-proyecto/index.html
