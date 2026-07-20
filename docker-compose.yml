@@ -95,6 +95,17 @@ services:
       - api
     networks:
       - devops_network
+  
+  reports:
+  image: nginx:alpine
+  container_name: devops_reports
+  restart: unless-stopped
+
+  ports:
+    - "8085:80"
+
+  volumes:
+    - /opt/reports:/usr/share/nginx/html:ro
 
 networks:
   devops_network:
